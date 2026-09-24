@@ -137,3 +137,4 @@ C:\Users\NazarenoAllegue\.gemini\antigravity\scratch\KokoroAi.Backend\obj\Debug\
 C:\Users\NazarenoAllegue\.gemini\antigravity\scratch\KokoroAi.Backend\obj\Debug\net8.0\ref\KokoroAi.Backend.dll
 C:\Users\NazarenoAllegue\.gemini\antigravity\scratch\KokoroAi.Backend\bin\Debug\net8.0\KokoroAi.Backend.staticwebassets.runtime.json
 C:\Users\NazarenoAllegue\.gemini\antigravity\scratch\KokoroAi.Backend\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+C:\Users\NazarenoAllegue\.gemini\antigravity\scratch\KokoroAi.Backend\obj\Debug\net8.0\KokoroAi.Backend.sourcelink.json

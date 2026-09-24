@@ -24,7 +24,7 @@ builder.Services.AddControllers()
 // 3. Registrar Servicio de Gemini AI con HttpClient
 builder.Services.AddHttpClient<IGeminiChatService, GeminiChatService>(client =>
 {
-    client.Timeout = TimeSpan.FromSeconds(25);
+    client.Timeout = TimeSpan.FromSeconds(90);
 });
 
 // 4. Swagger / OpenAPI para pruebas

@@ -1,0 +1,48 @@
+## .NET / ASP.NET Core
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+bld/
+out/
+
+## NuGet packages
+*.nupkg
+*.nuspec
+packages/
+.nuget/
+
+## SQLite database (contiene datos locales)
+*.db
+*.db-shm
+*.db-wal
+
+## Logs
+*.log
+logs/
+
+## Secrets y configuración local — NUNCA commitear
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+
+## .NET User Secrets (guardados fuera del repo, pero por si acaso)
+**/UserSecrets/
+
+## OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## IDE
+.idea/
+*.swp
+*~

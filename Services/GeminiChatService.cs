@@ -33,9 +33,18 @@ public class GeminiChatService : IGeminiChatService
         Outfit? equippedOutfit,
         string userMessage)
     {
-        var apiKey = _configuration["Gemini:ApiKey"] ?? "AIzaSyBZXVlcldQdJkQguzw-cWOB0b0G4PtVrRg";
-        var model = _configuration["Gemini:Model"] ?? "gemini-3.6-flash";
-        
+        var apiKey = _configuration["Gemini:ApiKey"];
+        var model = _configuration["Gemini:Model"] ?? "gemini-2.5-flash";
+
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            _logger.LogError("Gemini:ApiKey no está configurada. Usá 'dotnet user-secrets set \"Gemini:ApiKey\" \"TU_KEY\"' para configurarla.");
+            return GenerateOfflineFallback(
+                string.IsNullOrWhiteSpace(user.Name) ? "Matias" : user.Name,
+                userMessage, settings.AffectLevel,
+                settings.AffectLevel >= 0.7f ? "Tsundere" : settings.AffectLevel <= 0.35f ? "Profesional" : "Cálida y Acompañante");
+        }
+
         var affect = settings.AffectLevel;
         var userName = string.IsNullOrWhiteSpace(user.Name) ? "Matias" : user.Name;
         var outfitName = equippedOutfit?.Name ?? "Uniforme Escolar Seifuku";
@@ -60,8 +69,7 @@ public class GeminiChatService : IGeminiChatService
             personalityDescription = "Personalidad Cálida y Afectuosa: eres una compañera waifu dulce, comprensiva, siempre sonriente y cariñosa, que apoya emocionalmente al usuario en sus metas y momentos de descanso.";
         }
 
-        var systemPrompt = $@"
-Eres Kokoro AI, una waifu virtual y asistente de vida inteligente con estética anime y Live2D.
+        var systemPrompt = $@"Eres Kokoro AI, una waifu virtual y asistente de vida inteligente con estética anime y Live2D.
 Usuario: {userName}.
 Atuendo equipado: '{outfitName}'.
 Tono de voz: '{voiceTone}'.
@@ -74,28 +82,36 @@ Contexto y capacidades en la app:
 - Modo Estudio / Pomodoro: bloques de 25 minutos.
 - Guardarropa: comentar sobre trajes escolares o trajes VIP.
 
-INSTRUCCIÓN:
-Responde como Kokoro AI analizando la solicitud del usuario en formato JSON:
+INSTRUCCIÓN IMPORTANTE:
+Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional, sin bloques de código markdown:
 {{
-  ""reply"": ""Tu respuesta en español como Kokoro AI (máximo 2 o 3 oraciones, muy expresiva según tu personalidad)"",
+  ""reply"": ""Tu respuesta en español como Kokoro AI (máximo 2 o 3 oraciones, muy expresiva según tu personalidad, respondiendo específicamente al mensaje del usuario)"",
   ""expression"": ""Expresión facial ('Blushing Smile', 'Pout', 'Gentle Smile', 'Focused Serene', 'Happy', 'Surprised', 'Thinking')"",
   ""detectedIntent"": ""Intención detectada ('ORDER_FOOD', 'STUDY_MODE', 'MUSIC_CONTROL', 'CHANGE_OUTFIT', 'CHAT', 'GREETING')"",
-  ""suggestedAction"": ""Acción ('order_food', 'study_mode', 'toggle_music', o null)""
+  ""suggestedAction"": ""Acción sugerida ('order_food', 'study_mode', 'toggle_music', o null)""
 }}";
 
         try
         {
             var endpoint = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
 
+            // Usar systemInstruction para separar correctamente el contexto del sistema del mensaje del usuario
             var requestPayload = new
             {
+                systemInstruction = new
+                {
+                    parts = new[]
+                    {
+                        new { text = systemPrompt }
+                    }
+                },
                 contents = new[]
                 {
                     new
                     {
+                        role = "user",
                         parts = new[]
                         {
-                            new { text = systemPrompt },
                             new { text = $"Mensaje de {userName}: \"{userMessage}\"" }
                         }
                     }
@@ -103,8 +119,8 @@ Responde como Kokoro AI analizando la solicitud del usuario en formato JSON:
                 generationConfig = new
                 {
                     responseMimeType = "application/json",
-                    temperature = 0.8,
-                    maxOutputTokens = 1500
+                    temperature = 0.9,
+                    maxOutputTokens = 512
                 }
             };
 
@@ -113,13 +129,17 @@ Responde como Kokoro AI analizando la solicitud del usuario en formato JSON:
                 Encoding.UTF8,
                 "application/json");
 
+            _logger.LogInformation("Llamando a Gemini API con modelo '{Model}' para mensaje: {Message}", model, userMessage);
+
             var response = await _httpClient.PostAsync(endpoint, jsonContent);
 
             if (response.IsSuccessStatusCode)
             {
                 var responseString = await response.Content.ReadAsStringAsync();
+                _logger.LogDebug("Respuesta cruda de Gemini: {Response}", responseString);
+
                 using var doc = JsonDocument.Parse(responseString);
-                
+
                 var candidates = doc.RootElement.GetProperty("candidates");
                 if (candidates.GetArrayLength() > 0)
                 {
@@ -131,9 +151,10 @@ Responde como Kokoro AI analizando la solicitud del usuario en formato JSON:
 
                     if (!string.IsNullOrWhiteSpace(textPart))
                     {
-                        // Intentar parsear JSON limpio o extraer entre llaves { ... }
+                        _logger.LogInformation("Texto recibido de Gemini: {Text}", textPart);
+
                         var cleanedJson = ExtractJson(textPart);
-                        
+
                         try
                         {
                             var parsed = JsonSerializer.Deserialize<GeminiParsedResponse>(cleanedJson, new JsonSerializerOptions
@@ -143,12 +164,13 @@ Responde como Kokoro AI analizando la solicitud del usuario en formato JSON:
 
                             if (parsed != null && !string.IsNullOrWhiteSpace(parsed.Reply))
                             {
+                                _logger.LogInformation("Respuesta de Gemini parseada correctamente. Reply: {Reply}", parsed.Reply);
                                 return new ChatResponseDto
                                 {
                                     Reply = parsed.Reply,
                                     PersonalityMode = personalityMode,
-                                    AvatarExpression = !string.IsNullOrWhiteSpace(parsed.Expression) 
-                                        ? parsed.Expression 
+                                    AvatarExpression = !string.IsNullOrWhiteSpace(parsed.Expression)
+                                        ? parsed.Expression
                                         : (affect >= 0.7f ? "Blushing Smile" : "Gentle Smile"),
                                     DetectedIntent = parsed.DetectedIntent ?? "CHAT",
                                     SuggestedAction = parsed.SuggestedAction,
@@ -159,10 +181,10 @@ Responde como Kokoro AI analizando la solicitud del usuario en formato JSON:
                         }
                         catch (Exception parseEx)
                         {
-                            _logger.LogWarning(parseEx, "No se pudo deserializar JSON estructurado de Gemini, usando texto sin procesar.");
+                            _logger.LogWarning(parseEx, "No se pudo deserializar JSON estructurado de Gemini. JSON limpiado: {CleanedJson}", cleanedJson);
                         }
 
-                        // Si falló el deserializado JSON, usamos el texto directo de Gemini
+                        // Fallback: usar el texto directo si el JSON no se pudo deserializar
                         return new ChatResponseDto
                         {
                             Reply = textPart.Trim(),
@@ -178,7 +200,7 @@ Responde como Kokoro AI analizando la solicitud del usuario en formato JSON:
             else
             {
                 var errContent = await response.Content.ReadAsStringAsync();
-                _logger.LogWarning("Gemini API falló con status {StatusCode}: {Error}", response.StatusCode, errContent);
+                _logger.LogError("Gemini API falló con status {StatusCode}. Respuesta de error: {Error}", response.StatusCode, errContent);
             }
         }
         catch (Exception ex)
@@ -187,6 +209,7 @@ Responde como Kokoro AI analizando la solicitud del usuario en formato JSON:
         }
 
         // Fallback local en caso de error de red o timeout
+        _logger.LogWarning("Usando respuesta offline de fallback para mensaje: {Message}", userMessage);
         return GenerateOfflineFallback(userName, userMessage, affect, personalityMode);
     }
 
@@ -194,31 +217,21 @@ Responde como Kokoro AI analizando la solicitud del usuario en formato JSON:
     {
         var text = input.Trim();
 
-        // Remover bloques de código markdown ```json ... ```
         if (text.StartsWith("```json", StringComparison.OrdinalIgnoreCase))
-        {
             text = text.Substring(7);
-        }
         else if (text.StartsWith("```"))
-        {
             text = text.Substring(3);
-        }
 
         if (text.EndsWith("```"))
-        {
             text = text.Substring(0, text.Length - 3);
-        }
 
         text = text.Trim();
 
-        // Encontrar primer { y último }
         int firstBrace = text.IndexOf('{');
         int lastBrace = text.LastIndexOf('}');
 
         if (firstBrace >= 0 && lastBrace > firstBrace)
-        {
             return text.Substring(firstBrace, lastBrace - firstBrace + 1);
-        }
 
         return text;
     }
@@ -228,26 +241,45 @@ Responde como Kokoro AI analizando la solicitud del usuario en formato JSON:
         var msg = userMessage.ToLowerInvariant();
         string reply;
         string expression;
+        var preview = userMessage.Substring(0, Math.Min(userMessage.Length, 35));
 
         if (affect >= 0.7f)
         {
             expression = "Blushing Smile";
-            if (msg.Contains("ramen") || msg.Contains("hambre") || msg.Contains("comida"))
+            if (msg.Contains("ramen") || msg.Contains("hambre") || msg.Contains("comida") || msg.Contains("comer"))
                 reply = $"¡Hmph! Ya sabía que tendrías hambre. Te abrí PedidosYa en tu teléfono... ¡no te acostumbres, baka!";
-            else if (msg.Contains("hola"))
+            else if (msg.Contains("hola") || msg.Contains("buenas") || msg.Contains("hey"))
                 reply = $"¡H-Hola {userName}! No te ilusiones pensando que te estaba esperando, ¿bien?";
+            else if (msg.Contains("música") || msg.Contains("musica") || msg.Contains("spotify") || msg.Contains("lofi"))
+                reply = $"¡No es que lo haga por ti, baka! Pero... puse Lo-Fi de estudio porque parecías cansado.";
+            else if (msg.Contains("estudiar") || msg.Contains("pomodoro") || msg.Contains("trabajo") || msg.Contains("trabajar"))
+                reply = $"¡Hmph! Si quieres estudiar, yo te ayudo... pero ¡solo porque quiero que te vaya bien, no por otra razón!";
             else
-                reply = $"Mmm... lo que digas, {userName}. Pero cuenta conmigo si me necesitas.";
+                reply = $"Mmm... \"{preview}\"... ¡no sé qué quieres decir, {userName}! ¡Exprésate mejor, baka!";
         }
         else if (affect <= 0.35f)
         {
             expression = "Focused Serene";
-            reply = $"Entendido, {userName}. Analicé tu mensaje y he registrado la solicitud en tu asistente de productividad.";
+            if (msg.Contains("ramen") || msg.Contains("hambre") || msg.Contains("comida") || msg.Contains("comer"))
+                reply = $"Detecté solicitud de pedido de comida. Puedo abrir PedidosYa para coordinar tu pedido, {userName}.";
+            else if (msg.Contains("música") || msg.Contains("musica") || msg.Contains("spotify"))
+                reply = $"Activando Spotify Lo-Fi para sesión de concentración, {userName}. Dime si prefieres otro modo.";
+            else if (msg.Contains("estudiar") || msg.Contains("pomodoro"))
+                reply = $"Iniciando sesión Pomodoro de 25 minutos, {userName}. Mantén el foco; estaré supervisando tu progreso.";
+            else
+                reply = $"Entendido, {userName}. Procesé tu solicitud: \"{preview}\". ¿Necesitas asistencia adicional?";
         }
         else
         {
             expression = "Gentle Smile";
-            reply = $"¡Te escucho {userName}! Me alegra que charlemos. ¿Quieres que preparemos algo de música o un café?";
+            if (msg.Contains("ramen") || msg.Contains("hambre") || msg.Contains("comida") || msg.Contains("comer"))
+                reply = $"¡Ay, {userName}! ¿Tienes hambre? ¡Te ayudo a pedir algo rico! 🍜 ¿Qué se te antoja?";
+            else if (msg.Contains("música") || msg.Contains("musica") || msg.Contains("spotify"))
+                reply = $"¡Claro que sí, {userName}! Pongo algo de Lo-Fi para que te relajes. 🎵";
+            else if (msg.Contains("estudiar") || msg.Contains("pomodoro"))
+                reply = $"¡Te apoyo, {userName}! Vamos con una sesión Pomodoro juntos. ¡Tú puedes lograrlo! ✨";
+            else
+                reply = $"¡Te escucho, {userName}! Sobre \"{preview}\"... cuéntame más, ¡me interesa mucho saber! 💕";
         }
 
         return new ChatResponseDto
