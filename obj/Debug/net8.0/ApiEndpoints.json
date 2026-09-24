@@ -1,0 +1,186 @@
+[
+  {
+    "ContainingType": "KokoroAi.Backend.Controllers.ChatController",
+    "Method": "SendMessage",
+    "RelativePath": "api/Chat",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "KokoroAi.Backend.Models.DTOs.ChatRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "KokoroAi.Backend.Models.DTOs.ChatResponseDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "KokoroAi.Backend.Controllers.DashboardController",
+    "Method": "GetDashboard",
+    "RelativePath": "api/Dashboard",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "KokoroAi.Backend.Models.DTOs.DashboardResponseDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "KokoroAi.Backend.Controllers.DashboardController",
+    "Method": "TriggerAction",
+    "RelativePath": "api/Dashboard/action",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "KokoroAi.Backend.Models.DTOs.QuickActionRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "KokoroAi.Backend.Models.DTOs.QuickActionResultDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "KokoroAi.Backend.Controllers.PersonalityController",
+    "Method": "GetPersonality",
+    "RelativePath": "api/Personality",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "KokoroAi.Backend.Models.DTOs.PersonalitySettingsDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "KokoroAi.Backend.Controllers.PersonalityController",
+    "Method": "UpdatePersonality",
+    "RelativePath": "api/Personality",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "KokoroAi.Backend.Models.DTOs.UpdatePersonalityRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "KokoroAi.Backend.Models.DTOs.PersonalitySettingsDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "KokoroAi.Backend.Controllers.WardrobeController",
+    "Method": "GetWardrobe",
+    "RelativePath": "api/Wardrobe",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "KokoroAi.Backend.Models.DTOs.WardrobeResponseDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "KokoroAi.Backend.Controllers.WardrobeController",
+    "Method": "EquipOutfit",
+    "RelativePath": "api/Wardrobe/equip/{outfitId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "outfitId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "KokoroAi.Backend.Models.DTOs.EquipOutfitResponseDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "KokoroAi.Backend.Controllers.WardrobeController",
+    "Method": "SubscribeTrial",
+    "RelativePath": "api/Wardrobe/subscribe-trial",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "KokoroAi.Backend.Models.DTOs.SubscribeVipResponseDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  }
+]

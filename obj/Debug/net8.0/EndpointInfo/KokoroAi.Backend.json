@@ -1,0 +1,667 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Kokoro AI Companion API",
+    "description": "API de backend para Kokoro AI: Asistente Virtual y Compañera basada en los wireframes de Figma con Gemini AI.",
+    "version": "v1"
+  },
+  "paths": {
+    "/api/Chat": {
+      "post": {
+        "tags": [
+          "Chat"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponseDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponseDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Dashboard": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponseDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponseDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Dashboard/action": {
+      "post": {
+        "tags": [
+          "Dashboard"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuickActionRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuickActionRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuickActionRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuickActionResultDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuickActionResultDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuickActionResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Personality": {
+      "get": {
+        "tags": [
+          "Personality"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonalitySettingsDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonalitySettingsDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonalitySettingsDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Personality"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePersonalityRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePersonalityRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePersonalityRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonalitySettingsDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonalitySettingsDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonalitySettingsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Wardrobe": {
+      "get": {
+        "tags": [
+          "Wardrobe"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/WardrobeResponseDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WardrobeResponseDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WardrobeResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Wardrobe/equip/{outfitId}": {
+      "post": {
+        "tags": [
+          "Wardrobe"
+        ],
+        "parameters": [
+          {
+            "name": "outfitId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipOutfitResponseDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipOutfitResponseDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipOutfitResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Wardrobe/subscribe-trial": {
+      "post": {
+        "tags": [
+          "Wardrobe"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscribeVipResponseDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscribeVipResponseDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscribeVipResponseDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AvatarHeroDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "equippedOutfitName": {
+            "type": "string",
+            "nullable": true
+          },
+          "avatarImageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "currentExpression": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChatRequestDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChatResponseDto": {
+        "type": "object",
+        "properties": {
+          "reply": {
+            "type": "string",
+            "nullable": true
+          },
+          "personalityMode": {
+            "type": "string",
+            "nullable": true
+          },
+          "avatarExpression": {
+            "type": "string",
+            "nullable": true
+          },
+          "detectedIntent": {
+            "type": "string",
+            "nullable": true
+          },
+          "suggestedAction": {
+            "type": "string",
+            "nullable": true
+          },
+          "isAiGenerated": {
+            "type": "boolean"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardResponseDto": {
+        "type": "object",
+        "properties": {
+          "userName": {
+            "type": "string",
+            "nullable": true
+          },
+          "isVip": {
+            "type": "boolean"
+          },
+          "avatar": {
+            "$ref": "#/components/schemas/AvatarHeroDto"
+          },
+          "proactiveDialogue": {
+            "$ref": "#/components/schemas/ProactiveDialogueDto"
+          },
+          "spotifyWidget": {
+            "$ref": "#/components/schemas/SpotifyWidgetDto"
+          },
+          "quickActions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuickActionPillDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "EquipOutfitResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "equippedOutfit": {
+            "$ref": "#/components/schemas/OutfitItemDto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "OutfitItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "isVipOnly": {
+            "type": "boolean"
+          },
+          "isUnlocked": {
+            "type": "boolean"
+          },
+          "isEquipped": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonalitySettingsDto": {
+        "type": "object",
+        "properties": {
+          "affectLevel": {
+            "type": "number",
+            "format": "float"
+          },
+          "affectLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "voiceTone": {
+            "type": "string",
+            "nullable": true
+          },
+          "voicePitch": {
+            "type": "number",
+            "format": "float"
+          },
+          "availableVoiceTones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProactiveDialogueDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "subtext": {
+            "type": "string",
+            "nullable": true
+          },
+          "suggestedAction": {
+            "type": "string",
+            "nullable": true
+          },
+          "suggestedActionLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "QuickActionPillDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "label": {
+            "type": "string",
+            "nullable": true
+          },
+          "icon": {
+            "type": "string",
+            "nullable": true
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "QuickActionRequestDto": {
+        "type": "object",
+        "properties": {
+          "actionId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "QuickActionResultDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "payload": {
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SpotifyWidgetDto": {
+        "type": "object",
+        "properties": {
+          "trackTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "artist": {
+            "type": "string",
+            "nullable": true
+          },
+          "albumCoverUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "isPlaying": {
+            "type": "boolean"
+          },
+          "currentProgressSeconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalDurationSeconds": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SubscribeVipResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdatePersonalityRequestDto": {
+        "type": "object",
+        "properties": {
+          "affectLevel": {
+            "type": "number",
+            "format": "float"
+          },
+          "voiceTone": {
+            "type": "string",
+            "nullable": true
+          },
+          "voicePitch": {
+            "type": "number",
+            "format": "float"
+          }
+        },
+        "additionalProperties": false
+      },
+      "VipBannerDto": {
+        "type": "object",
+        "properties": {
+          "isVipActive": {
+            "type": "boolean"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "subtitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "ctaButtonText": {
+            "type": "string",
+            "nullable": true
+          },
+          "daysRemaining": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "WardrobeResponseDto": {
+        "type": "object",
+        "properties": {
+          "vipBanner": {
+            "$ref": "#/components/schemas/VipBannerDto"
+          },
+          "outfits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OutfitItemDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}
