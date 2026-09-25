@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("KokoroAi.Backend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4411be39c382aa86c6bebd7122abadd621bb6300")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+23507c7d82156d7adf8b596c56fec7099f763239")]
 [assembly: System.Reflection.AssemblyProductAttribute("KokoroAi.Backend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("KokoroAi.Backend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

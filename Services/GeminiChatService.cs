@@ -34,11 +34,11 @@ public class GeminiChatService : IGeminiChatService
         string userMessage)
     {
         var apiKey = _configuration["Gemini:ApiKey"];
-        var model = _configuration["Gemini:Model"] ?? "gemini-2.5-flash";
+        var model = _configuration["Gemini:Model"] ?? "gemini-3.5-flash-lite";
 
         if (string.IsNullOrWhiteSpace(apiKey))
         {
-            _logger.LogError("Gemini:ApiKey no está configurada. Usá 'dotnet user-secrets set \"Gemini:ApiKey\" \"TU_KEY\"' para configurarla.");
+            _logger.LogError("Gemini:ApiKey no está configurada. Ejecutá: dotnet user-secrets set \"Gemini:ApiKey\" \"TU_NUEVA_KEY\"");
             return GenerateOfflineFallback(
                 string.IsNullOrWhiteSpace(user.Name) ? "Matias" : user.Name,
                 userMessage, settings.AffectLevel,
@@ -93,119 +93,112 @@ Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional, sin bloque
 
         try
         {
-            var endpoint = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
-
-            // Usar systemInstruction para separar correctamente el contexto del sistema del mensaje del usuario
-            var requestPayload = new
-            {
-                systemInstruction = new
-                {
-                    parts = new[]
-                    {
-                        new { text = systemPrompt }
-                    }
-                },
-                contents = new[]
-                {
-                    new
-                    {
-                        role = "user",
-                        parts = new[]
-                        {
-                            new { text = $"Mensaje de {userName}: \"{userMessage}\"" }
-                        }
-                    }
-                },
-                generationConfig = new
-                {
-                    responseMimeType = "application/json",
-                    temperature = 0.9,
-                    maxOutputTokens = 512
-                }
+            // Lista de modelos de respaldo por si alguno está saturado (503)
+            string[] fallbackModels = new[] { 
+                model, // El configurado en appsettings primero
+                "gemini-1.5-flash", 
+                "gemini-2.0-flash", 
+                "gemini-1.5-pro"
             };
 
-            var jsonContent = new StringContent(
-                JsonSerializer.Serialize(requestPayload),
-                Encoding.UTF8,
-                "application/json");
-
-            _logger.LogInformation("Llamando a Gemini API con modelo '{Model}' para mensaje: {Message}", model, userMessage);
-
-            var response = await _httpClient.PostAsync(endpoint, jsonContent);
-
-            if (response.IsSuccessStatusCode)
+            foreach (var currentModel in fallbackModels.Distinct())
             {
-                var responseString = await response.Content.ReadAsStringAsync();
-                _logger.LogDebug("Respuesta cruda de Gemini: {Response}", responseString);
+                // Usamos la API de producción (v1) en lugar de la experimental (v1beta) para mayor estabilidad
+                var apiVersion = currentModel.Contains("3.5") || currentModel.Contains("2.0") ? "v1beta" : "v1";
+                var endpoint = $"https://generativelanguage.googleapis.com/{apiVersion}/models/{currentModel}:generateContent?key={apiKey}";
 
-                using var doc = JsonDocument.Parse(responseString);
-
-                var candidates = doc.RootElement.GetProperty("candidates");
-                if (candidates.GetArrayLength() > 0)
+                var requestPayload = new
                 {
-                    var textPart = candidates[0]
-                        .GetProperty("content")
-                        .GetProperty("parts")[0]
-                        .GetProperty("text")
-                        .GetString();
-
-                    if (!string.IsNullOrWhiteSpace(textPart))
+                    contents = new[]
                     {
-                        _logger.LogInformation("Texto recibido de Gemini: {Text}", textPart);
-
-                        var cleanedJson = ExtractJson(textPart);
-
-                        try
+                        new
                         {
-                            var parsed = JsonSerializer.Deserialize<GeminiParsedResponse>(cleanedJson, new JsonSerializerOptions
+                            role = "user", // Requerido por la API estable
+                            parts = new[]
                             {
-                                PropertyNameCaseInsensitive = true
-                            });
-
-                            if (parsed != null && !string.IsNullOrWhiteSpace(parsed.Reply))
-                            {
-                                _logger.LogInformation("Respuesta de Gemini parseada correctamente. Reply: {Reply}", parsed.Reply);
-                                return new ChatResponseDto
-                                {
-                                    Reply = parsed.Reply,
-                                    PersonalityMode = personalityMode,
-                                    AvatarExpression = !string.IsNullOrWhiteSpace(parsed.Expression)
-                                        ? parsed.Expression
-                                        : (affect >= 0.7f ? "Blushing Smile" : "Gentle Smile"),
-                                    DetectedIntent = parsed.DetectedIntent ?? "CHAT",
-                                    SuggestedAction = parsed.SuggestedAction,
-                                    IsAiGenerated = true,
-                                    Timestamp = DateTime.UtcNow
-                                };
+                                new { text = systemPrompt },
+                                new { text = $"Mensaje de {userName}: \"{userMessage}\"" }
                             }
                         }
-                        catch (Exception parseEx)
-                        {
-                            _logger.LogWarning(parseEx, "No se pudo deserializar JSON estructurado de Gemini. JSON limpiado: {CleanedJson}", cleanedJson);
-                        }
+                    },
+                    generationConfig = new
+                    {
+                        responseMimeType = "application/json",
+                        temperature = 0.9,
+                        maxOutputTokens = 512
+                    }
+                };
 
-                        // Fallback: usar el texto directo si el JSON no se pudo deserializar
-                        return new ChatResponseDto
+                var jsonContent = new StringContent(
+                    JsonSerializer.Serialize(requestPayload),
+                    Encoding.UTF8,
+                    "application/json");
+
+                _logger.LogInformation("Llamando a Gemini API con modelo '{Model}'...", currentModel);
+
+                var response = await _httpClient.PostAsync(endpoint, jsonContent);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseString = await response.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(responseString);
+                    
+                    var candidates = doc.RootElement.GetProperty("candidates");
+                    if (candidates.GetArrayLength() > 0)
+                    {
+                        var textPart = candidates[0]
+                            .GetProperty("content")
+                            .GetProperty("parts")[0]
+                            .GetProperty("text")
+                            .GetString();
+
+                        if (!string.IsNullOrWhiteSpace(textPart))
                         {
-                            Reply = textPart.Trim(),
-                            PersonalityMode = personalityMode,
-                            AvatarExpression = affect >= 0.7f ? "Blushing Smile" : "Gentle Smile",
-                            DetectedIntent = "CHAT",
-                            IsAiGenerated = true,
-                            Timestamp = DateTime.UtcNow
-                        };
+                            var cleanedJson = ExtractJson(textPart);
+                            try
+                            {
+                                var parsed = JsonSerializer.Deserialize<GeminiParsedResponse>(cleanedJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                                if (parsed != null && !string.IsNullOrWhiteSpace(parsed.Reply))
+                                {
+                                    return new ChatResponseDto
+                                    {
+                                        Reply = parsed.Reply,
+                                        PersonalityMode = personalityMode,
+                                        AvatarExpression = !string.IsNullOrWhiteSpace(parsed.Expression) ? parsed.Expression : (affect >= 0.7f ? "Blushing Smile" : "Gentle Smile"),
+                                        DetectedIntent = parsed.DetectedIntent ?? "CHAT",
+                                        SuggestedAction = parsed.SuggestedAction,
+                                        IsAiGenerated = true,
+                                        Timestamp = DateTime.UtcNow
+                                    };
+                                }
+                            }
+                            catch (Exception parseEx)
+                            {
+                                _logger.LogWarning(parseEx, "Fallo al parsear JSON con {Model}", currentModel);
+                            }
+                            return new ChatResponseDto
+                            {
+                                Reply = textPart.Trim(),
+                                PersonalityMode = personalityMode,
+                                AvatarExpression = affect >= 0.7f ? "Blushing Smile" : "Gentle Smile",
+                                DetectedIntent = "CHAT",
+                                IsAiGenerated = true,
+                                Timestamp = DateTime.UtcNow
+                            };
+                        }
                     }
                 }
-            }
-            else
-            {
-                var errContent = await response.Content.ReadAsStringAsync();
-                _logger.LogError("Gemini API falló con status {StatusCode}. Respuesta de error: {Error}", response.StatusCode, errContent);
+                else
+                {
+                    var errContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("El modelo {Model} falló ({Status}). Reintentando con el siguiente... Detalle: {Error}", currentModel, response.StatusCode, errContent);
+                    // Si falla, el loop continúa con el siguiente modelo de la lista automáticamente
+                }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Excepción al conectar con Gemini API. Activando fallback offline.");
+            _logger.LogError(ex, "Excepción crítica de red al conectar con Gemini API.");
         }
 
         // Fallback local en caso de error de red o timeout
@@ -217,21 +210,31 @@ Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional, sin bloque
     {
         var text = input.Trim();
 
+        // Remover bloques de código markdown ```json ... ```
         if (text.StartsWith("```json", StringComparison.OrdinalIgnoreCase))
+        {
             text = text.Substring(7);
+        }
         else if (text.StartsWith("```"))
+        {
             text = text.Substring(3);
+        }
 
         if (text.EndsWith("```"))
+        {
             text = text.Substring(0, text.Length - 3);
+        }
 
         text = text.Trim();
 
+        // Encontrar primer { y último }
         int firstBrace = text.IndexOf('{');
         int lastBrace = text.LastIndexOf('}');
 
         if (firstBrace >= 0 && lastBrace > firstBrace)
+        {
             return text.Substring(firstBrace, lastBrace - firstBrace + 1);
+        }
 
         return text;
     }

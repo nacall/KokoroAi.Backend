@@ -1,8 +1,8 @@
-wwwroot\outfits\casual_lofi.png
-wwwroot\outfits\cyberpunk_neon.jpg
-wwwroot\outfits\deportivo.jpg
-wwwroot\outfits\kimono_tradicional.jpg
-wwwroot\outfits\maid.jpg
-wwwroot\outfits\pijama_kigurumi.jpg
-wwwroot\outfits\uniforme_escolar.png
 wwwroot\outfits\yukata_festivo.jpg
+wwwroot\outfits\uniforme_escolar.png
+wwwroot\outfits\pijama_kigurumi.jpg
+wwwroot\outfits\maid.jpg
+wwwroot\outfits\kimono_tradicional.jpg
+wwwroot\outfits\deportivo.jpg
+wwwroot\outfits\cyberpunk_neon.jpg
+wwwroot\outfits\casual_lofi.png
